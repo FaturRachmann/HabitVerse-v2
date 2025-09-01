@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: habitverse-app
+    environment:
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+      # Add custom envs here, e.g. SECRET_KEY, DATABASE_URL if migrated from SQLite
+    volumes:
+      - ../app:/app/app:ro
+      - ../alembic.ini:/app/alembic.ini:ro
+      - ../habitverse.db:/app/habitverse.db
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: habitverse-nginx
+    depends_on:
+      - app
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+volumes:
+  db-data:
+    driver: local
